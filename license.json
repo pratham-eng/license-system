@@ -2,9 +2,5 @@
     "00": {
         "status": "active",
         "expiry": "2026-04-28"
-    },
-    "admin": {
-        "status": "active",
-        "expiry": "2026-04-28"
     }
 }
