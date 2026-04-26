@@ -29,29 +29,33 @@ if "logged_in" not in st.session_state:
 if "current_user" not in st.session_state:
     st.session_state.current_user = ""
 
-# -------- LICENSE CHECK --------
+# -------- LICENSE CHECK (NO CACHE) --------
 def check_license(key):
     try:
-        res = requests.get(LICENSE_URL, timeout=5)
+        # 🔥 force fresh data (no cache)
+        url = LICENSE_URL + "?t=" + str(time.time())
+
+        res = requests.get(url, timeout=5)
 
         if res.status_code != 200:
             return False, "Server error"
 
         data = res.json()
 
-        if key in data:
-            lic = data[key]
+        # 🔥 license deleted
+        if key not in data:
+            return False, "License deleted"
 
-            if lic["status"] != "active":
-                return False, "License inactive"
+        lic = data[key]
 
-            expiry = datetime.strptime(lic["expiry"], "%Y-%m-%d")
-            if datetime.now() > expiry:
-                return False, "License expired"
+        if lic["status"] != "active":
+            return False, "License inactive"
 
-            return True, "Valid"
+        expiry = datetime.strptime(lic["expiry"], "%Y-%m-%d")
+        if datetime.now() > expiry:
+            return False, "License expired"
 
-        return False, "Invalid license"
+        return True, "Valid"
 
     except:
         return False, "Connection error"
@@ -126,7 +130,7 @@ def dashboard():
     if user in users:
         lic = users[user]["license"]
 
-        # 🔁 CONTINUOUS CHECK LOOP
+        # 🔥 REAL-TIME CHECK
         valid, msg = check_license(lic)
 
         if not valid:
@@ -138,7 +142,6 @@ def dashboard():
     st.sidebar.subheader("⚙️ Settings")
     num_cams = st.sidebar.number_input("Number of Cameras", 0, 10, 2)
 
-    # Sample Data
     cams = {f"Cam{i+1}": (i+1)*10 for i in range(num_cams)}
 
     total = sum(cams.values())
@@ -175,7 +178,7 @@ def dashboard():
 
     st.success("System Running ✅")
 
-    # 🔁 AUTO REFRESH EVERY 5 SECONDS
+    # 🔥 AUTO REFRESH (every 5 sec)
     time.sleep(5)
     st.rerun()
 
