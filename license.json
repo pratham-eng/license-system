@@ -1,8 +1,4 @@
 {
-    "12345": {
-        "status": "active",
-        "expiry": "2026-04-27"
-    },
     "123": {
         "status": "active",
         "expiry": "2026-04-27"
