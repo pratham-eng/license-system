@@ -1,9 +1,9 @@
 import streamlit as st
 import json
-from datetime import datetime
-import pandas as pd
 import os
+import pandas as pd
 import requests
+from datetime import datetime
 
 st.set_page_config(layout="wide")
 
@@ -29,11 +29,6 @@ if "current_user" not in st.session_state:
     st.session_state.current_user = ""
 
 # -------- LICENSE CHECK --------
-import requests
-from datetime import datetime
-
-LICENSE_URL = "https://raw.githubusercontent.com/pratham-eng/license-system/main/license.json"
-
 def check_license(key):
     try:
         res = requests.get(LICENSE_URL)
@@ -59,6 +54,7 @@ def check_license(key):
 
     except:
         return False, "Connection error"
+
 # -------- SIGNUP --------
 def signup():
     st.title("📝 Sign Up")
@@ -121,13 +117,26 @@ def login():
 # -------- DASHBOARD --------
 def dashboard():
 
+    # 🔐 REAL-TIME LICENSE CHECK
+    users = load_users()
+    user = st.session_state.current_user
+
+    if user in users:
+        lic = users[user]["license"]
+        valid, msg = check_license(lic)
+
+        if not valid:
+            st.session_state.logged_in = False
+            st.error(f"Access revoked: {msg}")
+            st.stop()
+
     st.title("📊 Daily Store Analytics")
 
     # Sidebar camera control
     st.sidebar.subheader("⚙️ Settings")
     num_cams = st.sidebar.number_input("Number of Cameras", 0, 10, 2)
 
-    # Load data
+    # Load sample data
     data = {}
     if os.path.exists("data.json"):
         try:
@@ -136,7 +145,6 @@ def dashboard():
         except:
             st.warning("Data error")
 
-    # Camera data
     cams = {}
     for i in range(num_cams):
         cam = f"Cam{i+1}"
@@ -160,7 +168,7 @@ def dashboard():
         st.warning("No Cameras Added")
         return
 
-    # Graphs
+    # Charts
     col1, col2 = st.columns(2)
 
     with col1:
@@ -168,19 +176,16 @@ def dashboard():
             "Time": ["10","12","2","4","6","8"],
             "People": [20,40,120,90,200,110]
         })
-        st.line_chart(df.set_index("Time"), height=250)
+        st.line_chart(df.set_index("Time"))
 
     with col2:
         df2 = pd.DataFrame({
             "Camera": list(cams.keys()),
             "People": list(cams.values())
         })
-        st.bar_chart(df2.set_index("Camera"), height=250)
-
-    st.divider()
+        st.bar_chart(df2.set_index("Camera"))
 
     st.success("System Running ✅")
-    st.write(f"Cameras Active: {num_cams}")
 
 # -------- MAIN --------
 menu = st.sidebar.radio("Menu", ["Login", "Sign Up"])
