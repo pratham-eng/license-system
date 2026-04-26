@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import requests
 from datetime import datetime
+import time
 
 st.set_page_config(layout="wide")
 
@@ -31,7 +32,7 @@ if "current_user" not in st.session_state:
 # -------- LICENSE CHECK --------
 def check_license(key):
     try:
-        res = requests.get(LICENSE_URL)
+        res = requests.get(LICENSE_URL, timeout=5)
 
         if res.status_code != 200:
             return False, "Server error"
@@ -117,12 +118,15 @@ def login():
 # -------- DASHBOARD --------
 def dashboard():
 
-    # 🔐 REAL-TIME LICENSE CHECK
+    st.title("📊 Daily Store Analytics")
+
     users = load_users()
     user = st.session_state.current_user
 
     if user in users:
         lic = users[user]["license"]
+
+        # 🔁 CONTINUOUS CHECK LOOP
         valid, msg = check_license(lic)
 
         if not valid:
@@ -130,27 +134,13 @@ def dashboard():
             st.error(f"Access revoked: {msg}")
             st.stop()
 
-    st.title("📊 Daily Store Analytics")
-
-    # Sidebar camera control
+    # Sidebar
     st.sidebar.subheader("⚙️ Settings")
     num_cams = st.sidebar.number_input("Number of Cameras", 0, 10, 2)
 
-    # Load sample data
-    data = {}
-    if os.path.exists("data.json"):
-        try:
-            with open("data.json", "r") as f:
-                data = json.load(f)
-        except:
-            st.warning("Data error")
+    # Sample Data
+    cams = {f"Cam{i+1}": (i+1)*10 for i in range(num_cams)}
 
-    cams = {}
-    for i in range(num_cams):
-        cam = f"Cam{i+1}"
-        cams[cam] = data.get("cams", {}).get(cam, (i+1)*10)
-
-    # KPI
     total = sum(cams.values())
     entries = total
     exits = int(total * 0.8)
@@ -166,26 +156,28 @@ def dashboard():
 
     if num_cams == 0:
         st.warning("No Cameras Added")
-        return
+    else:
+        col1, col2 = st.columns(2)
 
-    # Charts
-    col1, col2 = st.columns(2)
+        with col1:
+            df = pd.DataFrame({
+                "Time": ["10","12","2","4","6","8"],
+                "People": [20,40,120,90,200,110]
+            })
+            st.line_chart(df.set_index("Time"))
 
-    with col1:
-        df = pd.DataFrame({
-            "Time": ["10","12","2","4","6","8"],
-            "People": [20,40,120,90,200,110]
-        })
-        st.line_chart(df.set_index("Time"))
-
-    with col2:
-        df2 = pd.DataFrame({
-            "Camera": list(cams.keys()),
-            "People": list(cams.values())
-        })
-        st.bar_chart(df2.set_index("Camera"))
+        with col2:
+            df2 = pd.DataFrame({
+                "Camera": list(cams.keys()),
+                "People": list(cams.values())
+            })
+            st.bar_chart(df2.set_index("Camera"))
 
     st.success("System Running ✅")
+
+    # 🔁 AUTO REFRESH EVERY 5 SECONDS
+    time.sleep(5)
+    st.rerun()
 
 # -------- MAIN --------
 menu = st.sidebar.radio("Menu", ["Login", "Sign Up"])
