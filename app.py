@@ -29,6 +29,11 @@ if "current_user" not in st.session_state:
     st.session_state.current_user = ""
 
 # -------- LICENSE CHECK --------
+import requests
+from datetime import datetime
+
+LICENSE_URL = "https://raw.githubusercontent.com/pratham-eng/license-system/main/license.json"
+
 def check_license(key):
     try:
         res = requests.get(LICENSE_URL)
@@ -54,7 +59,6 @@ def check_license(key):
 
     except:
         return False, "Connection error"
-
 # -------- SIGNUP --------
 def signup():
     st.title("📝 Sign Up")
