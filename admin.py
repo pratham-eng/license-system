@@ -7,7 +7,7 @@ st.set_page_config(layout="wide")
 st.title("🛠️ Admin License Panel")
 
 # -------- CONFIG --------
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = st.secrets["github_token"]   # ✅ secure
 REPO = "pratham-eng/license-system"
 FILE_PATH = "license.json"
 
@@ -90,8 +90,10 @@ for k in licenses:
         if status in [200, 201]:
             st.success("Updated")
             st.rerun()
+        else:
+            st.error(f"Error: {status}")
 
-    if st.button(f"Delete {k}"):
+    if st.button(f"Delete {k}", key=f"d_{k}"):
         delete_key = k
 
 if delete_key:
@@ -101,3 +103,5 @@ if delete_key:
     if status in [200, 201]:
         st.warning("Deleted")
         st.rerun()
+    else:
+        st.error(f"Error: {status}")
